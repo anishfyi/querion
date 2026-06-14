@@ -6,6 +6,8 @@
 
 <p align="center"><strong>A strictly read-only, natural-language data analyst that plugs into any platform and runs on the Claude Code CLI.</strong></p>
 
+<p align="center"><a href="https://anishfyi.github.io/querion/">Website</a> - <a href="https://github.com/anishfyi/trove">Trove (semantic layer)</a></p>
+
 Point Querion at your Postgres database and your read-only APIs, then ask questions in plain English. It answers like a senior data analyst: the number, the insight, the exact query behind it, and a chart when one helps. It never writes anything, anywhere.
 
 There is no API key to manage. Querion uses your locally authenticated Claude Code CLI as its brain.
