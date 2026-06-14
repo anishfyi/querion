@@ -146,7 +146,38 @@ ul.ticks li b{color:var(--fg);font-weight:600}
 footer{margin-top:96px;padding-top:26px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint)}
 footer a{color:var(--accent-2)}
 footer a:hover{color:var(--accent)}
-@media (max-width:640px){.nav .hideS{display:none}.hero{padding:48px 0 30px}}
+@media (max-width:760px){
+  .frame{padding:0 18px 80px}
+  header{flex-direction:column;align-items:flex-start;gap:13px;padding:18px 0 15px}
+  .brand{gap:12px}
+  .brand .tag{display:none}
+  .mark{font-size:25px}
+  .brand img{width:40px;height:40px}
+  .nav{width:100%;gap:2px}
+  .nav a{padding:8px 10px;font-size:10px;letter-spacing:.1em}
+  .nav .hideS{display:none}
+  .hero{padding:40px 0 24px}
+  .kicker{font-size:9.5px;letter-spacing:.16em;flex-wrap:wrap;justify-content:center;max-width:94%;line-height:1.7}
+  .hero h1{font-size:clamp(30px,8.5vw,46px);max-width:none;margin-top:18px}
+  .hero p.sub{font-size:15px;margin-top:18px}
+  .readouts{gap:7px;margin-top:22px}
+  .readout{font-size:9.5px;padding:7px 10px}
+  .cta{margin-top:26px}
+  .demo{margin-top:40px}
+  .demo-body{font-size:11px;padding:15px 14px}
+  .demo-wf{font-size:10.5px}
+  .section{margin-top:62px}
+  .sec-head{gap:12px;margin-bottom:22px}
+  .sec-title{font-size:clamp(23px,6vw,30px)}
+  .lede{font-size:15px}
+  .flow{flex-direction:column;gap:8px}
+  .flow .arr{display:none}
+  .flow .node{min-width:0}
+  .step{grid-template-columns:32px 1fr;gap:13px;padding:18px 0}
+  .step .num{font-size:23px}
+  .code pre{font-size:11.5px}
+  footer{flex-direction:column;align-items:flex-start;gap:10px}
+}
 </style>
 </head>
 <body x-data="site()">
