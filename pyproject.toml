@@ -1,0 +1,37 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "querion"
+version = "0.1.0"
+description = "A strictly read-only, natural-language data analyst that runs on the Claude Code CLI and plugs into any platform."
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "anishfyi" }]
+keywords = ["analytics", "natural-language", "postgres", "claude", "read-only", "data-analyst"]
+dependencies = [
+    "pyyaml>=6.0",
+    "psycopg2-binary>=2.9",
+    "requests>=2.28",
+]
+
+[project.optional-dependencies]
+web = ["fastapi>=0.110", "uvicorn>=0.27"]
+charts = ["matplotlib>=3.7"]
+dotenv = ["python-dotenv>=1.0"]
+all = ["fastapi>=0.110", "uvicorn>=0.27", "matplotlib>=3.7", "python-dotenv>=1.0"]
+
+[project.urls]
+Homepage = "https://github.com/anishfyi/querion"
+"Semantic layer (Trove)" = "https://github.com/anishfyi/trove"
+
+[project.scripts]
+querion = "querion.cli:main"
+
+[tool.setuptools]
+packages = ["querion"]
+
+[tool.setuptools.package-data]
+querion = ["web/*.html"]

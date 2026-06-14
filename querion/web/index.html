@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Querion - read-only natural-language data analyst</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.1/dist/cdn.min.js"></script>
+<style>
+  :root { --bg:#0B0E14; --panel:#131722; --panel2:#0E1220; --line:#1F2433;
+          --ink:#E8EAF0; --muted:#8B93A7; --accent:#4E79E6; --green:#10B981; --red:#EF4444; }
+  * { box-sizing:border-box; margin:0; }
+  body { background:var(--bg); color:var(--ink); font-family:'Space Grotesk',sans-serif; line-height:1.5; }
+  a { color:var(--accent); text-decoration:none; }
+  [x-cloak] { display:none !important; }
+  .wrap { max-width:980px; margin:0 auto; padding:0 22px; }
+  header { border-bottom:1px solid var(--line); position:sticky; top:0; background:rgba(11,14,20,.85);
+           backdrop-filter:blur(8px); z-index:5; }
+  header .wrap { display:flex; align-items:center; gap:14px; padding:14px 22px; }
+  .logo { font-size:20px; font-weight:700; letter-spacing:.3px; }
+  .logo span { color:var(--accent); }
+  .grow { flex:1; }
+  .chip { font-size:12px; color:var(--muted); border:1px solid var(--line); border-radius:99px; padding:4px 11px; }
+  .hero { text-align:center; padding:64px 0 30px; }
+  .hero h1 { font-size:40px; line-height:1.12; letter-spacing:-.5px; }
+  .hero h1 .g { color:var(--accent); }
+  .hero p { color:var(--muted); font-size:17px; max-width:680px; margin:16px auto 0; }
+  .badges { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-top:22px; }
+  .badge { font-size:12px; border:1px solid var(--line); background:var(--panel); border-radius:99px;
+           padding:6px 13px; color:var(--muted); }
+  .badge b { color:var(--green); }
+  .ask { background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:20px; margin-top:14px; }
+  .askrow { display:flex; gap:10px; }
+  .askrow input { flex:1; background:var(--panel2); border:1px solid var(--line); color:var(--ink);
+                  border-radius:10px; padding:13px 15px; font:inherit; font-size:15px; }
+  .askrow input:focus { outline:none; border-color:var(--accent); }
+  .btn { background:var(--accent); color:#fff; border:0; border-radius:10px; padding:12px 22px;
+         font:inherit; font-weight:700; cursor:pointer; }
+  .btn:disabled { opacity:.45; cursor:default; }
+  .examples { display:flex; gap:8px; flex-wrap:wrap; margin-top:12px; }
+  .ex { font-size:12.5px; color:var(--muted); border:1px dashed var(--line); border-radius:8px;
+        padding:6px 10px; cursor:pointer; background:transparent; font-family:inherit; }
+  .ex:hover { color:var(--ink); border-color:var(--accent); }
+  .steps { display:flex; flex-wrap:wrap; gap:8px; margin:16px 0 6px; }
+  .step { font-size:12px; border:1px solid var(--line); background:var(--panel2); border-radius:99px;
+          padding:4px 11px; color:var(--muted); }
+  .answer { white-space:pre-wrap; background:var(--panel2); border:1px solid var(--line);
+            border-radius:12px; padding:16px; margin-top:10px; }
+  .refused { border-color:#7f1d1d; color:#fca5a5; }
+  details { margin-top:10px; } summary { cursor:pointer; color:var(--muted); font-size:12.5px; }
+  pre.sql { background:#0A0D16; border:1px solid var(--line); border-radius:10px; padding:12px;
+            overflow:auto; font-size:12px; color:#9EC1FF; margin-top:8px; }
+  .cards { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; margin:42px 0; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px 20px; }
+  .card h3 { font-size:15px; margin-bottom:8px; } .card p { color:var(--muted); font-size:13.5px; }
+  .flow { display:flex; flex-wrap:wrap; gap:10px; align-items:center; justify-content:center; margin:8px 0 40px; color:var(--muted); font-size:13px; }
+  .flow .node { border:1px solid var(--line); background:var(--panel); border-radius:10px; padding:10px 14px; color:var(--ink); }
+  .flow .arrow { color:var(--accent); }
+  .spin { display:inline-block; width:14px; height:14px; border:2px solid var(--line);
+          border-top-color:var(--accent); border-radius:50%; animation:r .8s linear infinite; vertical-align:-2px; margin-right:8px; }
+  @keyframes r { to { transform:rotate(360deg); } }
+  footer { border-top:1px solid var(--line); color:var(--muted); font-size:13px; padding:26px 0; text-align:center; }
+  canvas { max-height:300px; margin-top:12px; }
+  .secitle { font-size:13px; text-transform:uppercase; letter-spacing:1px; color:var(--muted); margin:38px 0 10px; }
+</style>
+</head>
+<body x-data="app()" x-init="init()">
+<header><div class="wrap">
+  <div class="logo">Quer<span>ion</span></div>
+  <div class="grow"></div>
+  <span class="chip" x-show="cfg" x-cloak x-text="'model: ' + (cfg?.model || '')"></span>
+  <span class="chip" x-show="cfg?.sources?.length" x-cloak x-text="(cfg?.sources?.length||0) + ' source(s)'"></span>
+  <a class="chip" href="https://github.com/anishfyi/querion" target="_blank">GitHub</a>
+</div></header>
+
+<main class="wrap">
+  <section class="hero">
+    <h1>Ask your data <span class="g">in plain English.</span></h1>
+    <p>Querion is a strictly read-only data analyst. Point it at your Postgres database
+       and your read-only APIs, and it answers business questions like a senior analyst -
+       the number, the insight, the query, and a chart. It runs on the Claude Code CLI,
+       so it needs no API key.</p>
+    <div class="badges">
+      <span class="badge"><b>read-only</b> everywhere</span>
+      <span class="badge">Postgres + any HTTP API</span>
+      <span class="badge">Claude Code CLI brain</span>
+      <span class="badge">charts + SQL transparency</span>
+    </div>
+  </section>
+
+  <!-- Ask -->
+  <section class="ask">
+    <div class="askrow">
+      <input x-model="q" :disabled="running" @keydown.enter="ask()"
+             placeholder="e.g. revenue by month this year, with a chart">
+      <button class="btn" :disabled="running || !q.trim()" @click="ask()">
+        <span x-show="running" class="spin"></span><span x-text="running ? 'Thinking' : 'Ask'"></span>
+      </button>
+    </div>
+    <div class="examples">
+      <template x-for="e in examples" :key="e">
+        <button class="ex" @click="q=e; ask()" x-text="e"></button>
+      </template>
+    </div>
+
+    <div x-show="run" x-cloak>
+      <div class="steps">
+        <template x-for="s in (run?.steps||[])" :key="s.n">
+          <span class="step" x-text="'step ' + s.n + ': ' + (s.kinds||[]).join(', ')"></span>
+        </template>
+        <span class="step" x-show="running"><span class="spin"></span>reasoning...</span>
+      </div>
+      <template x-for="(spec,i) in (run?.charts||[])" :key="'c'+i">
+        <canvas :id="'chart'+i"></canvas>
+      </template>
+      <div class="answer" :class="{refused: run?.status==='refused'}"
+           x-show="run?.answer" x-text="run?.answer"></div>
+      <details x-show="(run?.sqls||[]).length">
+        <summary x-text="'Show SQL (' + (run?.sqls||[]).length + ')'"></summary>
+        <template x-for="(s,i) in (run?.sqls||[])" :key="'s'+i"><pre class="sql" x-text="s"></pre></template>
+      </details>
+    </div>
+  </section>
+
+  <!-- How it works -->
+  <div class="secitle">How a question is answered</div>
+  <div class="flow">
+    <span class="node">Plain-English question</span><span class="arrow">-&gt;</span>
+    <span class="node">Querion plans read-only steps</span><span class="arrow">-&gt;</span>
+    <span class="node">Postgres SELECT + API GETs</span><span class="arrow">-&gt;</span>
+    <span class="node">Insight + table + chart</span>
+  </div>
+
+  <!-- Capabilities -->
+  <div class="secitle">What Querion does</div>
+  <div class="cards">
+    <div class="card"><h3>Plug in any platform</h3><p>Add a key and secret to the environment,
+      drop in the API docs, and connect your Postgres. No code. Querion reads your schema and
+      your endpoints and starts answering.</p></div>
+    <div class="card"><h3>Multi-source reasoning</h3><p>It joins history in Postgres with live
+      truth from your APIs in a single answer - the way an analyst would, picking the right source
+      per question.</p></div>
+    <div class="card"><h3>Read-only by contract</h3><p>SELECT/WITH only, GET only with a per-source
+      allowlist, and a firewall that refuses any request to change data. It never writes anything,
+      anywhere.</p></div>
+    <div class="card"><h3>Charts and transparency</h3><p>Trend, comparison, and share-of-whole
+      charts, plus the exact query behind every number so you can trust and reuse it.</p></div>
+    <div class="card"><h3>Runs on Claude Code CLI</h3><p>No API key. Querion shells out to your
+      locally authenticated Claude Code CLI, with Opus recommended for the deepest reasoning.</p></div>
+    <div class="card"><h3>Semantic layer via Trove</h3><p>Pair it with
+      <a href="https://github.com/anishfyi/trove" target="_blank">Trove</a> to auto-build a semantic
+      layer - your metric definitions and domain vocabulary - so answers speak your language.</p></div>
+  </div>
+</main>
+
+<footer class="wrap">
+  Querion - read-only natural-language data analyst -
+  <a href="https://github.com/anishfyi/querion" target="_blank">github.com/anishfyi/querion</a> -
+  semantic layers by <a href="https://github.com/anishfyi/trove" target="_blank">Trove</a>
+</footer>
+
+<script>
+const PALETTE = ["#4E79E6","#10B981","#F59E0B","#EC4899","#8B5CF6","#14B8A6","#EF4444","#64748B"];
+const CHARTS = {};
+function drawSpec(id, spec) {
+  const el = document.getElementById(id); if (!el) return;
+  if (CHARTS[id]) CHARTS[id].destroy();
+  Chart.defaults.color = "#8B93A7"; Chart.defaults.borderColor = "#1F2433";
+  Chart.defaults.font.family = "'Space Grotesk', sans-serif";
+  const type = (spec.type||'bar').toLowerCase();
+  const labels = (spec.x||[]).map(String);
+  if (type === 'pie') {
+    CHARTS[id] = new Chart(el, {type:'doughnut', data:{labels, datasets:[{data:(spec.series?.[0]?.values)||[],
+      backgroundColor:PALETTE, borderColor:'#131722', borderWidth:2}]},
+      options:{cutout:'58%', plugins:{legend:{position:'right'},
+        title:{display:!!spec.title,text:spec.title,color:'#E8EAF0'}}}}); return;
+  }
+  CHARTS[id] = new Chart(el, {type: type==='line'?'line':'bar',
+    data:{labels, datasets:(spec.series||[]).map((s,i)=>({label:s.name||'',data:s.values||[],
+      borderColor:s.color||PALETTE[i%PALETTE.length],
+      backgroundColor:(s.color||PALETTE[i%PALETTE.length])+(type==='line'?'22':''),
+      fill:type==='line', tension:.3, borderRadius:4}))},
+    options:{plugins:{legend:{display:(spec.series||[]).length>1},
+      title:{display:!!spec.title,text:spec.title,color:'#E8EAF0'}}}});
+}
+function app() {
+  return {
+    cfg:null, q:'', run:null, running:false, timer:null,
+    examples:["how many new vs returning customers this month",
+              "revenue by week for the last 8 weeks, with a chart",
+              "top 10 products by revenue this quarter"],
+    async init() { try { this.cfg = await (await fetch('/api/config')).json(); } catch(e){} },
+    async ask() {
+      if (!this.q.trim() || this.running) return;
+      this.running = true; this.run = null;
+      let r;
+      try { r = await (await fetch('/api/ask', {method:'POST',
+        headers:{'Content-Type':'application/json'}, body:JSON.stringify({question:this.q})})).json(); }
+      catch(e){ this.running=false; this.run={status:'error',answer:'Request failed.'}; return; }
+      if (r.refused) { this.run={status:'refused',answer:r.refused}; this.running=false; return; }
+      const id = r.id;
+      this.timer = setInterval(async () => {
+        let s; try { s = await (await fetch('/api/ask/'+id)).json(); } catch(e){ return; }
+        this.run = s;
+        if (s.status && s.status !== 'running') {
+          clearInterval(this.timer); this.running = false;
+          this.$nextTick(() => (s.charts||[]).forEach((spec,i)=>drawSpec('chart'+i, spec)));
+        }
+      }, 1400);
+    },
+  };
+}
+</script>
+</body>
+</html>

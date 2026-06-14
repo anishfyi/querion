@@ -1,0 +1,47 @@
+# Querion configuration. Copy to querion.yaml and edit.
+# Any ${VAR} is read from the environment (or a .env file), so secrets never
+# live in this file.
+
+company: "Acme Inc"
+
+# Claude Code CLI model alias. Opus is recommended for the deepest reasoning.
+model: opus
+# claude_bin: /usr/local/bin/claude   # only if `claude` is not on PATH
+
+database:
+  # Point this at a READ-ONLY Postgres role. Querion enforces read-only on top.
+  dsn: ${QUERION_DATABASE_DSN}
+  statement_timeout_ms: 15000
+  row_cap: 500
+  # Optional: a curated schema markdown file. If omitted, Querion introspects
+  # the live database (read-only) on startup.
+  # schema_doc: docs/schema.md
+
+# Read-only HTTP APIs the analyst may GET from. Add one block per platform.
+# Just add the key/secret to the environment and describe the API in `docs`.
+sources:
+  - name: example
+    base_url: https://api.example.com
+    # "Header-Name: value"; the value may interpolate a secret.
+    auth_header: "Authorization: Bearer ${EXAMPLE_API_KEY}"
+    # STRONGLY recommended: list the read endpoints you allow. If set, only
+    # matching paths are permitted (default-deny). This is how you stay
+    # read-only on APIs that expose state-changing operations over GET.
+    safe_get:
+      - ^/v1/customers
+      - ^/v1/orders
+      - ^/v1/invoices
+    docs: docs/sources/example.md
+    timeout: 25
+
+limits:
+  daily_per_user: 50          # 0 = unlimited
+  max_steps: 7                # max reasoning steps per question
+  max_directives_per_step: 4  # parallel independent reads per step
+
+# Optional semantic layer maintained by Trove (github.com/anishfyi/trove).
+# Trove builds a file-based semantic layer as you work; Querion folds it in so
+# it understands your metric definitions and domain vocabulary.
+trove:
+  enabled: false
+  layer_path: .trove/semantic.md

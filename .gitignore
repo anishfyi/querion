@@ -1,0 +1,21 @@
+# Secrets and local config
+.env
+querion.yaml
+.querion_usage.json
+
+# Trove semantic layer (generated locally)
+.trove/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+# OS / editor
+.DS_Store
+.idea/
+.vscode/
