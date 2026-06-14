@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/querion-logo.png" alt="Querion" width="124" height="124">
+  <img src="assets/querion-logo.png" alt="Querion" width="280">
 </p>
 
 <h1 align="center">Querion</h1>
