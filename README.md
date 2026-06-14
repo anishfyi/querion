@@ -1,6 +1,10 @@
-# Querion
+<p align="center">
+  <img src="assets/querion-logo.png" alt="Querion" width="124" height="124">
+</p>
 
-**A strictly read-only, natural-language data analyst that plugs into any platform and runs on the Claude Code CLI.**
+<h1 align="center">Querion</h1>
+
+<p align="center"><strong>A strictly read-only, natural-language data analyst that plugs into any platform and runs on the Claude Code CLI.</strong></p>
 
 Point Querion at your Postgres database and your read-only APIs, then ask questions in plain English. It answers like a senior data analyst: the number, the insight, the exact query behind it, and a chart when one helps. It never writes anything, anywhere.
 
