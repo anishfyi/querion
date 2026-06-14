@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Querion - read-only natural-language data analyst</title>
+<meta name="description" content="Querion is a strictly read-only data analyst. Point it at Postgres and any API, ask in plain English, get the number, the insight, the query, and a chart. Runs on the Claude Code CLI.">
+<link rel="icon" type="image/png" href="querion-logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300..800&family=Hanken+Grotesk:ital,wght@0,300..800;1,400..600&family=Space+Mono:ital,wght@0,400;0,700&display=swap" rel="stylesheet">
+<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+<style>
+:root{
+  --bg:#000000; --bg-1:#0b0b0d; --bg-2:#111114; --bg-3:#17171b;
+  --line:#1f1f25; --line-2:#2b2b33;
+  --fg:#f0f0f2; --fg-dim:#9a9aa6; --fg-faint:#585862;
+  --accent:#f4f4f6; --accent-2:#babac4; --accent-glow:rgba(244,244,246,.12);
+  --c-sql:#56c2e8; --c-api:#e07ad0; --c-chat:#f5c451; --c-safe:#ff6f5e; --c-trove:#8b9cff;
+  --display:"Bricolage Grotesque","Hanken Grotesk",sans-serif;
+  --sans:"Hanken Grotesk",system-ui,sans-serif;
+  --mono:"Space Mono",ui-monospace,monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth;scrollbar-color:var(--line-2) var(--bg)}
+::selection{background:var(--accent);color:#0a0b0d}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:16px;line-height:1.6;min-height:100vh;-webkit-font-smoothing:antialiased;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background-image:linear-gradient(to right,rgba(255,255,255,.022) 1px,transparent 1px),linear-gradient(to bottom,rgba(255,255,255,.022) 1px,transparent 1px);
+  background-size:48px 48px;mask-image:radial-gradient(ellipse 92% 64% at 50% 22%,#000 38%,transparent 100%)}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;background:radial-gradient(1100px 500px at 50% -14%,rgba(255,255,255,.04),transparent 62%)}
+[x-cloak]{display:none!important}
+.frame{position:relative;z-index:2;max-width:1180px;margin:0 auto;padding:0 30px 110px}
+a{color:var(--accent);text-decoration:none}
+
+/* header */
+header{display:flex;align-items:center;justify-content:space-between;gap:24px;padding:26px 0 22px;flex-wrap:wrap;position:sticky;top:0;z-index:20;background:linear-gradient(to bottom,#000 70%,transparent);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:14px}
+.brand img{width:46px;height:46px;border:1px solid var(--line);border-radius:9px;display:block}
+.mark{font-family:var(--display);font-weight:800;font-size:30px;line-height:1;letter-spacing:-.04em;font-variation-settings:"opsz" 72}
+.mark .dot{color:var(--accent)}
+.brand .tag{font-family:var(--mono);font-size:10px;letter-spacing:.26em;text-transform:uppercase;color:var(--fg-faint);line-height:1.6;max-width:180px}
+.brand .tag b{color:var(--accent-2);font-weight:400}
+.nav{display:flex;align-items:center;gap:4px;flex-wrap:wrap}
+.nav a{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg-faint);padding:9px 13px;border-radius:5px;transition:color .16s,background .16s}
+.nav a:hover{color:var(--fg);background:var(--bg-1)}
+.nav a.gh{color:var(--accent-2);border:1px solid var(--line)}
+.nav a.gh:hover{border-color:var(--accent)}
+
+/* hero */
+.hero{padding:74px 0 40px;animation:rise .5s ease both;text-align:center}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.kicker{font-family:var(--mono);font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--fg-faint);display:inline-flex;align-items:center;gap:10px}
+.kicker .dot{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 10px var(--accent);animation:pulse 2.4s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:.45}50%{opacity:1}}
+.hero h1{font-family:var(--display);font-weight:800;font-size:clamp(40px,7vw,78px);line-height:.98;letter-spacing:-.04em;margin:22px auto 0;max-width:15ch;font-variation-settings:"opsz" 96}
+.hero h1 .g{color:var(--accent-2)}
+.hero h1 .dot{color:var(--accent)}
+.hero p.sub{color:var(--fg-dim);font-size:clamp(16px,2.2vw,20px);max-width:62ch;margin:24px auto 0;line-height:1.6}
+.readouts{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;margin-top:30px}
+.readout{font-family:var(--mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--fg-dim);border:1px solid var(--line);border-radius:5px;padding:8px 13px;background:var(--bg-1)}
+.readout b{color:var(--accent);font-weight:400}
+.cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:34px}
+.btn{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;font-weight:700;border-radius:6px;padding:13px 22px;cursor:pointer;transition:all .18s;border:1px solid var(--accent)}
+.btn.primary{background:var(--accent);color:#0a0b0d}
+.btn.primary:hover{box-shadow:0 0 26px var(--accent-glow);transform:translateY(-1px)}
+.btn.ghost{background:transparent;color:var(--accent-2);border-color:var(--line)}
+.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+/* terminal demo */
+.demo{margin:54px auto 0;max-width:760px;background:var(--bg-1);border:1px solid var(--line);border-radius:10px;overflow:hidden;text-align:left;box-shadow:0 30px 80px -40px rgba(0,0,0,.9)}
+.demo-bar{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid var(--line);background:var(--bg-2)}
+.demo-bar .d{width:9px;height:9px;border-radius:50%;background:var(--line-2)}
+.demo-bar .t{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-faint);margin-left:8px}
+.demo-body{padding:18px 20px;font-family:var(--mono);font-size:12.5px;line-height:1.85}
+.demo-q{color:var(--fg);margin-bottom:12px}
+.demo-q .you{color:var(--c-chat)}
+.demo-steps{color:var(--fg-faint);font-size:11px;letter-spacing:.04em;margin-bottom:12px}
+.demo-wf{color:var(--accent-2);white-space:pre;display:block;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:12px;overflow-x:auto}
+.demo-gloss{color:var(--fg-dim);font-size:11px;line-height:1.7}
+.demo-gloss .h{color:var(--fg-faint);letter-spacing:.16em;text-transform:uppercase;display:block;margin-bottom:3px}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.chip{font-family:var(--mono);font-size:10.5px;color:var(--fg-dim);border:1px dashed var(--line-2);border-radius:6px;padding:7px 11px;cursor:pointer;background:transparent;transition:all .14s}
+.chip:hover,.chip.on{color:var(--accent);border-color:var(--accent);border-style:solid}
+
+/* sections */
+.section{margin-top:84px;scroll-margin-top:90px;animation:rise .5s ease both}
+.sec-head{display:flex;align-items:flex-end;gap:18px;padding-bottom:15px;border-bottom:1px solid var(--line-2);margin-bottom:30px;position:relative}
+.sec-head::before{content:"";position:absolute;left:0;bottom:-1px;width:64px;height:2px;background:var(--ch,var(--accent));box-shadow:0 0 14px var(--ch,var(--accent))}
+.sec-no{font-family:var(--mono);font-size:11px;letter-spacing:.2em;color:var(--ch,var(--accent));padding-bottom:6px}
+.sec-title{font-family:var(--display);font-weight:700;font-size:clamp(26px,4vw,38px);letter-spacing:-.025em;flex:1;line-height:1}
+.lede{color:var(--fg-dim);font-size:17px;max-width:74ch;margin-bottom:28px;line-height:1.62}
+
+/* cards */
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.card{background:var(--bg-1);border:1px solid var(--line);border-radius:9px;padding:22px 24px;position:relative;overflow:hidden;transition:transform .18s,border-color .18s}
+.card::before{content:"";position:absolute;top:0;left:0;width:100%;height:2px;background:var(--ch,var(--accent));box-shadow:0 0 16px color-mix(in srgb,var(--ch,var(--accent)) 60%,transparent)}
+.card:hover{transform:translateY(-2px);border-color:var(--line-2)}
+.card .n{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-faint);margin-bottom:11px}
+.card h3{font-family:var(--display);font-weight:600;font-size:19px;letter-spacing:-.01em;margin-bottom:7px}
+.card p{font-size:14px;color:var(--fg-dim);line-height:1.55}
+
+/* flow */
+.flow{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin:8px 0 6px}
+.flow .node{flex:1;min-width:150px;background:var(--bg-1);border:1px solid var(--line);border-radius:8px;padding:16px 18px}
+.flow .node .k{font-family:var(--mono);font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--ch,var(--accent));margin-bottom:6px}
+.flow .node .v{font-size:14px;color:var(--fg);line-height:1.4}
+.flow .arr{align-self:center;color:var(--fg-faint);font-family:var(--mono)}
+
+/* code blocks */
+.code{position:relative;background:var(--bg-1);border:1px solid var(--line);border-radius:9px;margin:14px 0}
+.code .ct{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid var(--line)}
+.code .ct .cl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-faint)}
+.code pre{padding:15px 16px;font-family:var(--mono);font-size:12.5px;color:var(--accent-2);overflow-x:auto;white-space:pre;line-height:1.8}
+.code pre .c{color:var(--fg-faint)}
+.code pre .k{color:var(--c-sql)}
+.copy{font-family:var(--mono);font-size:9.5px;letter-spacing:.14em;text-transform:uppercase;background:transparent;border:1px solid var(--line-2);color:var(--fg-dim);border-radius:5px;padding:6px 11px;cursor:pointer;transition:all .15s}
+.copy:hover{color:var(--accent);border-color:var(--accent)}
+.copy.done{color:#0a0b0d;background:var(--accent);border-color:var(--accent)}
+
+/* steps */
+.steps{counter-reset:s;display:flex;flex-direction:column;gap:0}
+.step{display:grid;grid-template-columns:46px 1fr;gap:18px;padding:20px 0;border-bottom:1px solid var(--line)}
+.step:last-child{border-bottom:0}
+.step .num{counter-increment:s;font-family:var(--display);font-weight:700;font-size:30px;color:var(--ch,var(--accent));line-height:1;font-variation-settings:"opsz" 48}
+.step .num::before{content:counter(s,decimal-leading-zero)}
+.step h4{font-family:var(--display);font-weight:600;font-size:18px;letter-spacing:-.01em;margin-bottom:4px}
+.step p{font-size:14px;color:var(--fg-dim);line-height:1.55}
+.step .code{margin:12px 0 0}
+
+/* chat bubbles */
+.chatwrap{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px;margin-top:6px}
+.imapp{background:var(--bg-1);border:1px solid var(--line);border-radius:9px;padding:18px 20px}
+.imapp .h{display:flex;align-items:center;gap:9px;font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg-faint);margin-bottom:14px}
+.imapp .h .badge{width:8px;height:8px;border-radius:2px;background:var(--ch,var(--accent))}
+.bubble{font-size:13px;border-radius:10px;padding:9px 12px;margin-bottom:8px;max-width:88%;line-height:1.45}
+.bubble.you{background:var(--bg-3);color:var(--fg);margin-left:auto;border:1px solid var(--line)}
+.bubble.q{background:color-mix(in srgb,var(--ch,var(--accent)) 12%,var(--bg-2));color:var(--fg);border:1px solid color-mix(in srgb,var(--ch,var(--accent)) 30%,transparent)}
+.bubble.q b{color:var(--accent)}
+
+ul.ticks{list-style:none;margin:6px 0 0}
+ul.ticks li{position:relative;padding-left:22px;color:var(--fg-dim);font-size:14.5px;margin-bottom:9px;line-height:1.5}
+ul.ticks li::before{content:"+";position:absolute;left:0;top:0;color:var(--ch,var(--accent));font-family:var(--mono);font-weight:700}
+ul.ticks li b{color:var(--fg);font-weight:600}
+
+footer{margin-top:96px;padding-top:26px;border-top:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:18px;flex-wrap:wrap;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg-faint)}
+footer a{color:var(--accent-2)}
+footer a:hover{color:var(--accent)}
+@media (max-width:640px){.nav .hideS{display:none}.hero{padding:48px 0 30px}}
+</style>
+</head>
+<body x-data="site()">
+<div class="frame">
+
+  <header>
+    <div class="brand">
+      <img src="querion-logo.png" alt="Querion logo">
+      <div>
+        <div class="mark">Querion<span class="dot">.</span></div>
+      </div>
+      <div class="tag">Read-only<br><b>data analyst</b></div>
+    </div>
+    <nav class="nav">
+      <a href="#overview" class="hideS">Overview</a>
+      <a href="#integrate">Integrate</a>
+      <a href="#chat" class="hideS">Chat apps</a>
+      <a href="#setup">Setup</a>
+      <a href="#safety" class="hideS">Safety</a>
+      <a href="https://github.com/anishfyi/querion" class="gh" target="_blank" rel="noopener">GitHub</a>
+    </nav>
+  </header>
+
+  <!-- HERO -->
+  <section class="hero">
+    <span class="kicker"><span class="dot"></span> Strictly read-only - runs on the Claude Code CLI</span>
+    <h1>Ask your data <span class="g">in plain English<span class="dot">.</span></span></h1>
+    <p class="sub">Querion is a read-only data analyst. Point it at your Postgres database and any read-only API, and it answers business questions like a senior analyst: the number, the insight, the exact query, and a chart. No API key. It plugs into any platform, and it talks back in your chat apps.</p>
+    <div class="readouts">
+      <span class="readout"><b>read-only</b> everywhere</span>
+      <span class="readout">Postgres + any API</span>
+      <span class="readout">charts + SQL</span>
+      <span class="readout">Slack + WhatsApp ready</span>
+    </div>
+    <div class="cta">
+      <a href="https://github.com/anishfyi/querion" class="btn primary" target="_blank" rel="noopener">View on GitHub</a>
+      <a href="#setup" class="btn ghost">Set it up</a>
+    </div>
+
+    <!-- live-ish demo -->
+    <div class="demo">
+      <div class="demo-bar"><span class="d"></span><span class="d"></span><span class="d"></span><span class="t">querion - ask</span></div>
+      <div class="demo-body">
+        <div class="demo-q"><span class="you">you ~</span> <span x-text="ex.q"></span></div>
+        <div class="demo-steps" x-text="ex.steps"></div>
+        <div class="demo-wf" x-text="ex.wf"></div>
+        <div class="demo-gloss"><span class="h">Glossary</span><span x-text="ex.gloss"></span></div>
+        <div class="chips">
+          <template x-for="(e,i) in examples" :key="i">
+            <button class="chip" :class="{on:i===idx}" @click="idx=i" x-text="e.label"></button>
+          </template>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- OVERVIEW -->
+  <section class="section" id="overview" style="--ch:var(--accent)">
+    <div class="sec-head"><span class="sec-no">01</span><h2 class="sec-title">What Querion does</h2></div>
+    <p class="lede">Most teams have the data but not the analyst time. Dashboards answer the questions you planned for; everything else becomes a ticket. Querion turns the long tail of "can someone just pull..." into a chat message, while staying safe enough to point at production.</p>
+    <div class="flow">
+      <div class="node" style="--ch:var(--c-chat)"><div class="k">1 - Ask</div><div class="v">Plain-English question in chat or the CLI</div></div>
+      <span class="arr">-&gt;</span>
+      <div class="node" style="--ch:var(--accent)"><div class="k">2 - Plan</div><div class="v">Querion plans read-only steps</div></div>
+      <span class="arr">-&gt;</span>
+      <div class="node" style="--ch:var(--c-sql)"><div class="k">3 - Read</div><div class="v">Postgres SELECTs + API GETs</div></div>
+      <span class="arr">-&gt;</span>
+      <div class="node" style="--ch:var(--c-api)"><div class="k">4 - Answer</div><div class="v">Insight, table, chart, and the query</div></div>
+    </div>
+    <div class="grid" style="margin-top:22px">
+      <div class="card" style="--ch:var(--c-sql)"><div class="n">Multi-source</div><h3>One answer, many sources</h3><p>It joins history in Postgres with live truth from your APIs in a single answer, picking the right source per question.</p></div>
+      <div class="card" style="--ch:var(--c-safe)"><div class="n">Covenant</div><h3>Read-only by contract</h3><p>SELECT and WITH only, GET only with a per-source allowlist, and a firewall that refuses any request to change data.</p></div>
+      <div class="card" style="--ch:var(--c-api)"><div class="n">Transparent</div><h3>Number plus the query</h3><p>Every figure comes with the exact query and a short glossary of what it means, so you can trust it and reuse it.</p></div>
+      <div class="card" style="--ch:var(--accent)"><div class="n">No keys</div><h3>Runs on Claude Code CLI</h3><p>No API key to manage. Querion uses your locally authenticated Claude Code CLI as its brain, with Opus recommended.</p></div>
+    </div>
+  </section>
+
+  <!-- INTEGRATE -->
+  <section class="section" id="integrate" style="--ch:var(--c-api)">
+    <div class="sec-head"><span class="sec-no">02</span><h2 class="sec-title">Integrate any platform</h2></div>
+    <p class="lede">If a platform has an API, Querion can read it. You do not write code. You give Querion three things, and it pulls the data and structures it into the answer for you.</p>
+    <ul class="ticks">
+      <li><b>Add the key and secret</b> to the environment (a .env file or your secret manager). Querion never stores secrets in config.</li>
+      <li><b>Describe the API</b> in a short markdown file: the read endpoints and what they return, the way you would brief a new analyst.</li>
+      <li><b>Connect your Postgres</b> with a read-only role. That is it. Querion reads your schema and your endpoints and starts answering.</li>
+    </ul>
+    <div class="code" x-data="{c:'src'}">
+      <div class="ct"><span class="cl">querion.yaml - add one block per platform</span><button class="copy" @click="copy($el,'src')" x-text="cp==='src'?'copied':'copy'"></button></div>
+<pre id="src">sources:
+  <span class="c"># Stripe, your billing, your 3PL, your CRM... any read API</span>
+  - name: stripe
+    base_url: https://api.stripe.com
+    auth_header: "Authorization: Bearer ${STRIPE_KEY}"
+    safe_get:                <span class="c"># only these read paths are allowed</span>
+      - ^/v1/charges
+      - ^/v1/customers
+      - ^/v1/invoices
+    docs: docs/sources/stripe.md</pre>
+    </div>
+    <p class="lede" style="margin-top:8px">Now a single question can span Postgres and Stripe together. Querion fetches from each source, reconciles them, and returns one structured answer with the table, the chart, and the query behind it. Repeat the block for every platform you run.</p>
+    <div class="card" style="--ch:var(--c-safe);margin-top:6px"><div class="n">Why the allowlist</div><h3>A GET is not always read-only</h3><p>Some real APIs expose state-changing operations over GET. The per-source safe_get list means Querion can only ever reach the read paths you name. This is a default, not an afterthought.</p></div>
+  </section>
+
+  <!-- CHAT APPS -->
+  <section class="section" id="chat" style="--ch:var(--c-chat)">
+    <div class="sec-head"><span class="sec-no">03</span><h2 class="sec-title">Bring it to your chat</h2></div>
+    <p class="lede">Querion lives where your team already talks. A thin bridge forwards a message to Querion and posts the answer back, so the same analyst works in any instant-messaging app: Slack, WhatsApp, Microsoft Teams, Discord, or your own.</p>
+    <div class="flow" style="margin-bottom:24px">
+      <div class="node" style="--ch:var(--c-chat)"><div class="k">Messaging app</div><div class="v">Slack / WhatsApp / Teams / Discord</div></div>
+      <span class="arr">-&gt;</span>
+      <div class="node" style="--ch:var(--accent)"><div class="k">Bridge</div><div class="v">Socket Mode or a webhook handler</div></div>
+      <span class="arr">-&gt;</span>
+      <div class="node" style="--ch:var(--c-api)"><div class="k">Querion</div><div class="v">Read-only analyst loop</div></div>
+      <span class="arr">-&gt;</span>
+      <div class="node" style="--ch:var(--c-sql)"><div class="k">Reply</div><div class="v">Answer + chart, in the thread</div></div>
+    </div>
+    <div class="chatwrap">
+      <div class="imapp" style="--ch:var(--c-chat)">
+        <div class="h"><span class="badge"></span> Slack - Socket Mode</div>
+        <div class="bubble you">@Querion repeat customers this week vs last</div>
+        <div class="bubble q"><b>Repeat customers: 44 this week</b>, up from 38 (+15.8%). Chart attached, query on request.</div>
+      </div>
+      <div class="imapp" style="--ch:#25d366">
+        <div class="h"><span class="badge"></span> WhatsApp - Cloud API</div>
+        <div class="bubble you">net sales last 30 days?</div>
+        <div class="bubble q">GBP 312,480 net sales, last 30 days. <b>Glossary:</b> gross minus discounts and returns.</div>
+      </div>
+      <div class="imapp" style="--ch:var(--c-trove)">
+        <div class="h"><span class="badge"></span> Any app - your bridge</div>
+        <div class="bubble you">top 5 products this quarter</div>
+        <div class="bubble q">Here are the top 5 by revenue, with units and the SQL.</div>
+      </div>
+    </div>
+    <p class="lede" style="margin-top:22px">The bridge is small: it receives a message, calls Querion, and replies. Daily per-user limits, a write-request firewall, and read-only sources travel with Querion, so opening it to a channel stays safe.</p>
+  </section>
+
+  <!-- SETUP -->
+  <section class="section" id="setup" style="--ch:var(--accent)">
+    <div class="sec-head"><span class="sec-no">04</span><h2 class="sec-title">Set it up</h2></div>
+    <p class="lede">From zero to asking questions in a few minutes. You need Python 3.9+, a Postgres database, and the Claude Code CLI logged in once on the host.</p>
+    <div class="steps">
+      <div class="step"><span class="num"></span><div>
+        <h4>Install</h4><p>Clone the repo and install with the web UI, charts, and dotenv extras.</p>
+        <div class="code"><div class="ct"><span class="cl">shell</span><button class="copy" @click="copy($el,'i1')" x-text="cp==='i1'?'copied':'copy'"></button></div>
+<pre id="i1">git clone https://github.com/anishfyi/querion.git
+cd querion
+pip install -e ".[all]"</pre></div>
+      </div></div>
+      <div class="step"><span class="num"></span><div>
+        <h4>Log in to the Claude Code CLI</h4><p>Querion uses your local Claude Code session as its brain, so there is no API key. Run it once to authenticate.</p>
+        <div class="code"><div class="ct"><span class="cl">shell</span><button class="copy" @click="copy($el,'i2')" x-text="cp==='i2'?'copied':'copy'"></button></div>
+<pre id="i2">claude   <span class="c"># log in once (browser / your plan)</span></pre></div>
+      </div></div>
+      <div class="step"><span class="num"></span><div>
+        <h4>Configure</h4><p>Copy the examples, then set your company name, database DSN, and any API sources.</p>
+        <div class="code"><div class="ct"><span class="cl">shell</span><button class="copy" @click="copy($el,'i3')" x-text="cp==='i3'?'copied':'copy'"></button></div>
+<pre id="i3">cp querion.example.yaml querion.yaml
+cp .env.example .env
+<span class="c"># edit .env with your read-only Postgres DSN + API keys</span></pre></div>
+      </div></div>
+      <div class="step"><span class="num"></span><div>
+        <h4>Create a read-only database role</h4><p>Your strongest guarantee. Querion enforces read-only on top, but the role is the real backstop.</p>
+        <div class="code"><div class="ct"><span class="cl">sql</span><button class="copy" @click="copy($el,'i4')" x-text="cp==='i4'?'copied':'copy'"></button></div>
+<pre id="i4"><span class="k">CREATE ROLE</span> querion_ro LOGIN PASSWORD 'choose-a-strong-one';
+<span class="k">GRANT</span> CONNECT <span class="k">ON DATABASE</span> yourdb <span class="k">TO</span> querion_ro;
+<span class="k">GRANT</span> USAGE <span class="k">ON SCHEMA</span> public <span class="k">TO</span> querion_ro;
+<span class="k">GRANT</span> SELECT <span class="k">ON ALL TABLES IN SCHEMA</span> public <span class="k">TO</span> querion_ro;
+<span class="k">ALTER ROLE</span> querion_ro <span class="k">SET</span> default_transaction_read_only = on;</pre></div>
+      </div></div>
+      <div class="step"><span class="num"></span><div>
+        <h4>Check, ask, serve</h4><p>Validate the config and dependencies, ask a question in the terminal, or launch the web UI.</p>
+        <div class="code"><div class="ct"><span class="cl">shell</span><button class="copy" @click="copy($el,'i5')" x-text="cp==='i5'?'copied':'copy'"></button></div>
+<pre id="i5">querion check                          <span class="c"># config + DB + CLI</span>
+querion ask "orders and GMV last 7 days"
+querion serve                          <span class="c"># web UI on :8000</span></pre></div>
+      </div></div>
+    </div>
+    <p class="lede" style="margin-top:24px">Full configuration reference, the API-source format, and the architecture are in the repo. Start from <a href="https://github.com/anishfyi/querion#readme" target="_blank" rel="noopener">the README</a>.</p>
+  </section>
+
+  <!-- SAFETY -->
+  <section class="section" id="safety" style="--ch:var(--c-safe)">
+    <div class="sec-head"><span class="sec-no">05</span><h2 class="sec-title">Read-only, by construction</h2></div>
+    <p class="lede">"It never writes" is true by design, with defense in depth. The only thing Querion ever produces is the answer.</p>
+    <div class="grid">
+      <div class="card" style="--ch:var(--c-safe)"><div class="n">Layer 1</div><h3>Read-only role</h3><p>A dedicated Postgres role with SELECT-only grants. Your strongest guarantee, and you own it.</p></div>
+      <div class="card" style="--ch:var(--c-sql)"><div class="n">Layer 2</div><h3>SELECT / WITH only</h3><p>A single statement, validated, with a write and DDL keyword denylist that also catches data-modifying CTEs.</p></div>
+      <div class="card" style="--ch:var(--c-api)"><div class="n">Layer 3</div><h3>GET only, allowlisted</h3><p>HTTP egress is GET only, with a positive per-source allowlist for APIs that expose writes over GET.</p></div>
+      <div class="card" style="--ch:var(--c-chat)"><div class="n">Layer 4</div><h3>Write-request firewall</h3><p>If a user asks Querion to change data, the request is refused before it reaches any executor.</p></div>
+    </div>
+  </section>
+
+  <!-- TROVE -->
+  <section class="section" id="trove" style="--ch:var(--c-trove)">
+    <div class="sec-head"><span class="sec-no">06</span><h2 class="sec-title">Smarter with Trove</h2></div>
+    <p class="lede">Querion is far sharper when it knows your domain: what "active customer" means, which table is the source of truth, how your metrics are defined. Pair it with <a href="https://github.com/anishfyi/trove" target="_blank" rel="noopener">Trove</a>, a companion that builds and maintains a file-based semantic layer as you work and reloads it every session. Enable it in the config and Querion folds that layer into its knowledge, so every answer speaks your business language.</p>
+    <a href="https://github.com/anishfyi/trove" class="btn ghost" target="_blank" rel="noopener">Explore Trove</a>
+  </section>
+
+  <footer>
+    <span>Querion - read-only data analyst</span>
+    <span><a href="https://github.com/anishfyi/querion" target="_blank" rel="noopener">github.com/anishfyi/querion</a> - semantic layer by <a href="https://github.com/anishfyi/trove" target="_blank" rel="noopener">Trove</a></span>
+  </footer>
+
+</div>
+
+<script>
+function site(){
+  return {
+    cp:null, idx:0,
+    examples:[
+      {label:"Weekly GMV",
+       q:"weekly GMV for the last 8 weeks, with a chart",
+       steps:"step 1: querying...   step 2: charting...",
+       wf:"W17  78,400\nW18  81,200\nW19  76,950\nW20  84,100\nW21  88,330\nW22  91,500",
+       gloss:"GMV: sum of order totals in the period, VAT-inclusive. Source: Postgres, GBP."},
+      {label:"Repeat customers",
+       q:"repeat customers week 21 vs week 20",
+       steps:"step 1: querying...",
+       wf:"week 20   repeat 38   new 142\nweek 21   repeat 44   new 151\ndelta     +6 (+15.8%)",
+       gloss:"Repeat: a customer who ordered in the week and had an order before it. Source: Postgres."},
+      {label:"Live stock",
+       q:"live stock for SKU TRCD00007A right now",
+       steps:"step 1: reading warehouse API...",
+       wf:"SKU        TRCD00007A\non hand    1\nallocated  0\nstatus     in stock",
+       gloss:"Live warehouse level from the API, not the database mirror. Source: 3PL API."},
+      {label:"Net sales",
+       q:"net sales last 30 days",
+       steps:"step 1: querying...   step 2: returns...",
+       wf:"gross      365,200\n- discounts 18,400\n- returns   34,320\n= net      312,480",
+       gloss:"Net sales: gross minus discounts and returns. Returns counted on the refund date. GBP."},
+    ],
+    get ex(){return this.examples[this.idx]},
+    copy(el,id){
+      const pre=document.getElementById(id);
+      const text=pre.innerText;
+      navigator.clipboard.writeText(text).then(()=>{
+        this.cp=id; setTimeout(()=>{if(this.cp===id)this.cp=null},1400);
+      });
+    },
+  }
+}
+</script>
+</body>
+</html>
