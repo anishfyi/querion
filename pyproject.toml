@@ -24,7 +24,9 @@ dotenv = ["python-dotenv>=1.0"]
 all = ["fastapi>=0.110", "uvicorn>=0.27", "matplotlib>=3.7", "python-dotenv>=1.0"]
 
 [project.urls]
-Homepage = "https://github.com/anishfyi/querion"
+Homepage = "https://velofy.co/querion/"
+Documentation = "https://velofy.co/querion/"
+Repository = "https://github.com/anishfyi/querion"
 "Semantic layer (Trove)" = "https://github.com/anishfyi/trove"
 
 [project.scripts]
