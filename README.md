@@ -1,4 +1,9 @@
-<img src="assets/querion-logo.png" alt="Querion logo" width="120">
+<p align="center">
+  <a href="https://velofy.co/querion/"><picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/anishfyi/querion/main/assets/tile-dark.svg">
+    <img alt="Querion" src="https://raw.githubusercontent.com/anishfyi/querion/main/assets/tile-light.svg" width="360">
+  </picture></a>
+</p>
 
 # Querion
 
